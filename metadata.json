@@ -1,0 +1,6 @@
+{
+  "name": "QuizGen AI",
+  "description": "Gerador de questões inteligente a partir de textos e PDFs usando IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
