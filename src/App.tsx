@@ -56,11 +56,12 @@ export default function App() {
         body: formData,
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Falha ao gerar questões. Tente novamente.");
+        throw new Error(data.error || "Falha ao gerar questões. Tente novamente.");
       }
 
-      const data = await response.json();
       setQuestions(data.questions);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocorreu um erro inesperado.");

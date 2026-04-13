@@ -26,14 +26,24 @@ async function startServer() {
   const upload = multer({ storage: multer.memoryStorage() });
 
   // Initialize Gemini
-  const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn("AVISO: GEMINI_API_KEY não encontrada no ambiente.");
+  } else {
+    console.log(`Chave de API carregada: ${apiKey.substring(0, 4)}...`);
+  }
+  const genAI = new GoogleGenAI({ apiKey: apiKey || "" });
 
   // API Routes
   app.post("/api/generate-questions", upload.single("file"), async (req, res) => {
     try {
+      if (!apiKey) {
+        return res.status(500).json({ error: "Configuração ausente: Chave de API não encontrada." });
+      }
       let text = req.body.text || "";
 
       if (req.file) {
+        console.log("Processando PDF...");
         const data = await pdf(req.file.buffer);
         text = data.text;
       }
@@ -51,8 +61,9 @@ async function startServer() {
         ${text.substring(0, 10000)} // Limit text to avoid token limits
       `;
 
+      console.log("Gerando questões com Gemini...");
       const response = await genAI.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -86,10 +97,12 @@ async function startServer() {
       });
 
       const result = JSON.parse(response.text);
+      console.log("Questões geradas com sucesso!");
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao gerar questões:", error);
-      res.status(500).json({ error: "Erro interno ao processar sua solicitação." });
+      const errorMessage = error?.message || "Erro interno ao processar sua solicitação.";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
